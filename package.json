@@ -22,6 +22,12 @@
     "directories": {
       "output": "build"
     },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": ""
+      }
+    ],
     "files": [
       "dist/electron/**/*"
     ],

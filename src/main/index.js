@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain  } from 'electron'
 
 import { autoUpdater } from "electron-updater"
-import {uploadUrl} from "../renderer/config/config";
 /**
  * Set `__static` path to static files in production
  * https://simulatedgreg.gitbooks.io/electron-vue/content/en/using-static-assets.html
@@ -26,13 +25,13 @@ function createWindow () {
   })
 
   mainWindow.loadURL(winURL)
-
   mainWindow.on('closed', () => {
     mainWindow = null
   })
 }
 
 app.on('ready', createWindow)
+updateHandle()
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
@@ -76,7 +75,7 @@ app.on('ready', () => {
      updateNotAva: '现在使用的就是最新版本，不用更新',
    };
  
-   autoUpdater.setFeedURL("http://127.0.0.1/");
+   autoUpdater.setFeedURL('http://127.0.0.1:8080/');
    autoUpdater.autoDownload = false;
    autoUpdater.on('error', function (error) {
      sendUpdateMessage(message.error)

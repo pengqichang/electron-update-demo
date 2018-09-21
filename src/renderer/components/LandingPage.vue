@@ -4,37 +4,81 @@
         <button @click="update()">获取更新</button>
         <ol id="content">
           <li>{{tips}}</li>
+          <li>{{versionStatus}}</li>
+          <li>{{versionCode}}</li>
         </ol>
   </div>
 </template>
 
 <script>
 import { ipcRenderer } from "electron";
+import { checkVersion } from "./../util"
 
+const appVersion = require("../../../package.json").version;
   export default {
     name: 'landing-page',
     data() {
       return {
-        tips: ''
+        name: "",
+          password: "",
+          versionCode: "0",
+          tips: "",
+          showVersionTips: false,
+          versionTips: "",
+          appVersion: "",
+          canCancel: false,
+          isTopLevel: false,
+          downloadPercent: 0,
       }
     },
 
-    created() {
-       ipcRenderer.on("message", (event, text) => {
-           console.log("message",text);
-           this.tips = text;
-       });
-       ipcRenderer.on("downloadProgress", (event, progressObj)=> {
-           console.log(progressObj);
-           this.downloadPercent = progressObj.percent || 0;
-       });
-       ipcRenderer.on("isUpdateNow", () => {
-           ipcRenderer.send("isUpdateNow");
-       });
+    computed: {
+        versionStatus: function() {
+            switch (this.versionCode) {
+                case 0:
+                    return "服务器版本错误，请联系开发者";
+                case 1:
+                    return "最新版本，无需更新！";
+                case 2:
+                    return "版本即将强制升级！";
+                case 3:
+                    return "存在新版本，点击立即更新！";
+                default:
+                    return "版本检查中";
+            }
+        },
+    },
+
+   created() {
+        //设置窗口title为当前版本
+        document.title = `${document.title}-v${appVersion}`;
+
+        ipcRenderer.on("message", (event, text) => {
+            console.log(arguments);
+            console.log(event, text, appVersion);
+            const latestVersion = text.version;
+            console.warn(text);
+            console.log(parseFloat(appVersion));
+            this.versionCode = checkVersion(appVersion, latestVersion);
+             this.tips = text;
+        });
+        ipcRenderer.on("downloadProgress", (event, progressObj) => {
+            console.log('downloadProgress', progressObj);
+            this.downloadPercent = progressObj.percent || 0;
+        });
+        ipcRenderer.on("isUpdateNow", () => {
+            ipcRenderer.send("isUpdateNow");
+        });
+        ipcRenderer.send("checkForUpdate");
     },
 
     beforeDestroy() {
-      ipcRenderer.removeAll(["message", "downloadProgress", "isUpdateNow"]);
+        //组件销毁前移除所有事件监听channel
+        ipcRenderer.removeAllListeners([
+            "message",
+            "downloadProgress",
+            "isUpdateNow",
+        ]);
     },
 
     methods: {
